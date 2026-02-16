@@ -1,19 +1,20 @@
 FROM openemr/openemr:8.0.0
 
-# Set production mode
 ENV OE_MODE=production
 
-# Railway provides a dynamic PORT variable.
-# We reconfigure Apache to listen on that port instead of 80.
+# Remove SSL configuration (Railway handles HTTPS)
+RUN rm -f /etc/apache2/conf.d/ssl.conf 2>/dev/null || true
+RUN rm -f /etc/apache2/conf.d/openemr-ssl.conf 2>/dev/null || true
+RUN sed -i '/SSLCertificateFile/d' /etc/apache2/conf.d/openemr.conf 2>/dev/null || true
+RUN sed -i '/SSLCertificateKeyFile/d' /etc/apache2/conf.d/openemr.conf 2>/dev/null || true
+RUN sed -i '/SSLEngine on/d' /etc/apache2/conf.d/openemr.conf 2>/dev/null || true
 
-RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/httpd/conf/httpd.conf 2>/dev/null || true
-RUN sed -i 's/Listen 80/Listen ${PORT}/g' /usr/local/apache2/conf/httpd.conf 2>/dev/null || true
+# Ensure Apache listens on Railway dynamic port
+RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf 2>/dev/null || true
 
-# Ensure Apache binds to all interfaces
-RUN echo "ServerName localhost" >> /etc/httpd/conf/httpd.conf 2>/dev/null || true
-RUN echo "ServerName localhost" >> /usr/local/apache2/conf/httpd.conf 2>/dev/null || true
+# Suppress FQDN warning
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf 2>/dev/null || true
 
-# Expose Railway port
 EXPOSE ${PORT}
 
-CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
+CMD ["apache2-foreground"]
