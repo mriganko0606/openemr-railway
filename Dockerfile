@@ -12,7 +12,10 @@ RUN rm -f /etc/apache2/conf.d/ssl.conf || true
 
 # Ensure Apache listens on Railway dynamic port at runtime
 # and start Apache using the correct Alpine command
+# Switch to root to ensure we can modify config files
+USER root
+
 COPY run_railway.sh /usr/local/bin/run_railway.sh
 RUN chmod +x /usr/local/bin/run_railway.sh
 
-CMD ["/usr/local/bin/run_railway.sh"]
+ENTRYPOINT ["/usr/local/bin/run_railway.sh"]

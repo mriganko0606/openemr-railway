@@ -8,19 +8,16 @@ if [ -z "$PORT" ]; then
 fi
 
 echo "Configuring Apache to listen on port $PORT..."
-# Function to replace port in file if it exists
-replace_port() {
-    if [ -f "$1" ]; then
-        sed -i "s/Listen 80/Listen $PORT/g" "$1"
-        echo "Updated $1"
-    else
-        echo "File $1 not found, skipping"
-    fi
-}
+# Recursively replace Listen 80 in /etc/apache2/
+find /etc/apache2/ -name "*.conf" -exec sed -i "s/Listen 80/Listen $PORT/g" {} +
 
-replace_port "/etc/apache2/httpd.conf"
-replace_port "/etc/apache2/ports.conf"
+# Ensure ServerName is set to avoid warnings/errors
+if ! grep -q "ServerName localhost" /etc/apache2/httpd.conf; then
+    echo "ServerName localhost" >> /etc/apache2/httpd.conf
+fi
 
 # Start Apache
 echo "Starting httpd..."
+# Apache on Alpine is usually at /usr/sbin/httpd
+# We use exec to replace the shell process
 exec httpd -D FOREGROUND
