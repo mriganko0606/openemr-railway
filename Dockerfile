@@ -10,10 +10,8 @@ RUN sed -i '/SSLEngine on/d' /etc/apache2/conf.d/openemr.conf || true
 # Remove ssl module if exists
 RUN rm -f /etc/apache2/conf.d/ssl.conf || true
 
-# Ensure Apache listens on Railway dynamic port
-RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf || true
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-EXPOSE ${PORT}
-
-CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
+# Ensure Apache listens on Railway dynamic port at runtime
+# and start Apache using the correct Alpine command
+CMD sed -i "s/Listen 80/Listen ${PORT:-80}/g" /etc/apache2/httpd.conf && \
+    sed -i "s/Listen 80/Listen ${PORT:-80}/g" /etc/apache2/ports.conf || true && \
+    exec httpd -D FOREGROUND
